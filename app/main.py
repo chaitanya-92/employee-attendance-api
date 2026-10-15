@@ -454,7 +454,7 @@ def employee_monthly_pipeline(emp_code: str, month: str):
     start, end, _, _ = month_bounds(month)
     return [
         {"$match": {"emp_code": emp_code, "date": {"$gte": start, "$lte": end}}},
-        {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}},
+        {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}}},
         {"$group": {"_id": None,
             "present_days": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$lte": ["$_weekday", 6]}, {"$gte": ["$_weekday", 2]}]}, {"$cond": [{"$ifNull": ["$half_day", False]}, 0.5, 1]}, 0]}},
             "leave_days": {"$sum": {"$cond": [{"$eq": ["$status", "LEAVE"]}, 1, 0]}},
@@ -541,8 +541,10 @@ def late_leaderboard_pipeline(month: str, limit: int, department: Optional[str] 
         {"$unwind": "$employee"},
     ]
     if department is not None:
+        # Filter before ranking so the rank is calculated only within this department.
         stages.append({"$match": {"employee.department": department}})
     stages += [
+        # $rank implements competition ranking (1, 2, 2, 4) without using array positions.
         {"$setWindowFields": {"sortBy": {"total_late_minutes": -1}, "output": {"rank": {"$rank": {}}}}},
         {"$match": {"rank": {"$lte": limit}}},
         {"$sort": {"total_late_minutes": -1, "_id": 1}},
