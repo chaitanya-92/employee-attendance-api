@@ -565,7 +565,6 @@ def department_trend_pipeline(department: str, start: str, end: str):
     # The API's dates are calendar dates in IST. Generate date strings from UTC
     # midnight here because the output labels themselves are date-only values.
     start_dt = datetime.combine(date.fromisoformat(start), time.min, UTC)
-    end_exclusive = datetime.combine(date.fromisoformat(end) + timedelta(days=1), time.min, UTC)
     days = (date.fromisoformat(end) - date.fromisoformat(start)).days + 1
     return [
         {"$match": {"department": department}},
