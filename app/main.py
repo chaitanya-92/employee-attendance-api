@@ -548,6 +548,8 @@ def late_leaderboard(month: str = Query(..., pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
 
 def department_trend_pipeline(department: str, start: str, end: str):
     """Build a daily series in MongoDB, including days with no attendance documents."""
+    # The API's dates are calendar dates in IST. Generate date strings from UTC
+    # midnight here because the output labels themselves are date-only values.
     start_dt = datetime.combine(date.fromisoformat(start), time.min, UTC)
     days = (date.fromisoformat(end) - date.fromisoformat(start)).days + 1
     return [
