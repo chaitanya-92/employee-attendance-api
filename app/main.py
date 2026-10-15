@@ -375,7 +375,14 @@ def punch_out(body: PunchOutIn):
         raise HTTPException(404, "employee not found")
     ts = from_epoch_ms(body.punched_at) if body.punched_at is not None else now_utc()
     ts = ts.replace(microsecond=0)
-    rec = db.attendance_logs.find_one({"emp_code": body.emp_code, "punch_in": {"$lte": ts}, "status": {"$in": PRESENT_STATUSES}}, sort=[("punch_in", DESCENDING)])
+    # Ignore records already closed when finding the active punch-in. Otherwise,
+    # a second punch-out could pick yesterday's newest completed record and mask
+    # an older open record for an overnight shift.
+    rec = db.attendance_logs.find_one(
+        {"emp_code": body.emp_code, "punch_in": {"$lte": ts},
+         "punch_out": None, "status": {"$in": PRESENT_STATUSES}},
+        sort=[("punch_in", DESCENDING)],
+    )
     if not rec:
         future = db.attendance_logs.find_one(
             {"emp_code": body.emp_code, "punch_in": {"$gt": ts}, "punch_out": None, "status": {"$in": PRESENT_STATUSES}},
@@ -384,8 +391,6 @@ def punch_out(body: PunchOutIn):
         if future:
             raise HTTPException(422, "punch-out must be after punch-in and within 24 hours")
         raise HTTPException(404, "no punch-in found")
-    if rec.get("punch_out") is not None:
-        raise HTTPException(409, "record is already punched out")
     if ts <= rec["punch_in"] or ts - rec["punch_in"] > timedelta(hours=24):
         raise HTTPException(422, "punch-out must be after punch-in and within 24 hours")
     fields = recalculate(rec["status"], rec["punch_in"], ts, emp, rec["date"])
