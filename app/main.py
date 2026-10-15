@@ -437,7 +437,7 @@ def employee_monthly_pipeline(emp_code: str, month: str):
     start, end, _, _ = month_bounds(month)
     return [
         {"$match": {"emp_code": emp_code, "date": {"$gte": start, "$lte": end}}},
-        {"$set": {"_weekday": {"$dayOfWeek": {"date": {"$dateFromString": {"dateString": "$date"}}, "timezone": "+05:30"}}},
+        {"$set": {"_weekday": {"$dayOfWeek": {"date": {"$dateFromString": {"dateString": "$date"}}, "timezone": "+05:30"}}}},
         {"$group": {"_id": None,
             "present_days": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$lte": ["$_weekday", 6]}, {"$gte": ["$_weekday", 2]}]}, {"$cond": [{"$ifNull": ["$half_day", False]}, 0.5, 1]}, 0]}},
             "leave_days": {"$sum": {"$cond": [{"$eq": ["$status", "LEAVE"]}, 1, 0]}},
