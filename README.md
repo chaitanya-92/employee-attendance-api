@@ -39,6 +39,6 @@ The kit includes sample JSON records and a `sample_seed.py` script. Review the s
 
 ## Verification
 
-Install the dependencies, start MongoDB, and then exercise the contract in `openapi.yaml` through Swagger UI or your HTTP client. Pay particular attention to duplicate punch-ins, punch-out without an open punch-in, regularization history, and analytics for a month with no records.
+Install the dependencies, start MongoDB, and run `pytest -q`. The CI workflow runs the same tests against MongoDB. Pay particular attention to duplicate punch-ins, punch-out without an eligible record, regularization history, and analytics for a month with no records. The `openapi.yaml`, `DATA_MODEL.md`, seed script, and sample data are part of the candidate kit; keep a local copy of the kit for reference when running the project.
 
 This repository should be treated as an assignment implementation, not a production-ready HR system. Authentication/authorization and deployment hardening are outside the current API surface.
