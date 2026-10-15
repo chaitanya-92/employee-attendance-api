@@ -82,6 +82,7 @@ def serialize_doc(doc: dict) -> dict:
         changes = {}
         for field, values in (e.get("changes") or {}).items():
             v = dict(values)
+            # Store audit timestamps as epoch milliseconds, just like the main record.
             if field in ("punch_in", "punch_out"):
                 for side in ("from", "to"):
                     if isinstance(v.get(side), datetime):
