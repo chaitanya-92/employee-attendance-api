@@ -74,6 +74,9 @@ def serialize_doc(doc: dict) -> dict:
     for key in ("created_at", "punch_in", "punch_out"):
         if key in doc and isinstance(doc[key], datetime):
             doc[key] = to_epoch_ms(doc[key])
+
+    # Normalize both sides of audit changes before returning the record. This
+    # also handles older history entries where MongoDB stored a datetime value.
     history = []
     for entry in doc.get("history") or []:
         e = dict(entry)
