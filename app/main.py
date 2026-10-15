@@ -606,6 +606,8 @@ def department_trend(department: str, from_: str = Query(..., alias="from"), to:
     if not db.employees.find_one({"department": department}, {"_id": 1}):
         raise HTTPException(404, "department not found")
     items = list(db.employees.aggregate(department_trend_pipeline(department, from_, to), allowDiskUse=True))
+    # MongoDB's $group cannot emit a row when the department has no matching
+    # employees, so validate the department before running the trend pipeline.
     return {"department": department, "items": items}
 
 
