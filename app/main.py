@@ -373,6 +373,12 @@ def punch_out(body: PunchOutIn):
     ts = ts.replace(microsecond=0)
     rec = db.attendance_logs.find_one({"emp_code": body.emp_code, "punch_in": {"$lte": ts}, "status": {"$in": PRESENT_STATUSES}}, sort=[("punch_in", DESCENDING)])
     if not rec:
+        future = db.attendance_logs.find_one(
+            {"emp_code": body.emp_code, "punch_in": {"$gt": ts}, "punch_out": None, "status": {"$in": PRESENT_STATUSES}},
+            sort=[("punch_in", ASCENDING)],
+        )
+        if future:
+            raise HTTPException(422, "punch-out must be after punch-in and within 24 hours")
         raise HTTPException(404, "no punch-in found")
     if rec.get("punch_out") is not None:
         raise HTTPException(409, "record is already punched out")
