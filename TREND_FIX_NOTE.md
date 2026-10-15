@@ -1,0 +1,1 @@
+The department trend date-series expression must reference the `$map` variable as `$$offset` inside `$dateAdd`. Review and validate that expression against MongoDB before relying on this endpoint.
