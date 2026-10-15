@@ -454,7 +454,7 @@ def employee_monthly_pipeline(emp_code: str, month: str):
     start, end, _, _ = month_bounds(month)
     return [
         {"$match": {"emp_code": emp_code, "date": {"$gte": start, "$lte": end}}},
-        {"$set": {"_weekday": {"$dayOfWeek": {"date": {"$dateFromString": {"dateString": "$date"}}, "timezone": "+05:30"}}}},
+        {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}},
         {"$group": {"_id": None,
             "present_days": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$lte": ["$_weekday", 6]}, {"$gte": ["$_weekday", 2]}]}, {"$cond": [{"$ifNull": ["$half_day", False]}, 0.5, 1]}, 0]}},
             "leave_days": {"$sum": {"$cond": [{"$eq": ["$status", "LEAVE"]}, 1, 0]}},
@@ -482,7 +482,17 @@ def employee_monthly(emp_code: str, month: str = Query(..., pattern=r"^\d{4}-(0[
     sums.setdefault("total_overtime_minutes", 0)
     present = float(sums.get("present_days", 0))
     pct = float(Decimal(str(present / working_days * 100)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)) if working_days else None
-    return {"emp_code": emp_code, "month": month, "working_days": working_days, **sums, "attendance_pct": pct}
+    return {
+        "emp_code": emp_code,
+        "month": month,
+        "working_days": working_days,
+        "present_days": sums["present_days"],
+        "leave_days": sums["leave_days"],
+        "late_count": sums["late_count"],
+        "total_late_minutes": sums["total_late_minutes"],
+        "total_overtime_minutes": sums["total_overtime_minutes"],
+        "attendance_pct": pct,
+    }
 
 
 def department_summary_pipeline(month: str, department: Optional[str] = None):
@@ -494,7 +504,7 @@ def department_summary_pipeline(month: str, department: Optional[str] = None):
         {"$match": employee_match},
         {"$lookup": {"from": "attendance_logs", "let": {"code": "$emp_code", "joined": "$joined_on"}, "pipeline": [
             {"$match": {"$expr": {"$and": [{"$eq": ["$emp_code", "$$code"]}, {"$gte": ["$date", start]}, {"$lte": ["$date", end]}, {"$gte": ["$date", "$$joined"]}]}}},
-            {"$set": {"_weekday": {"$dayOfWeek": {"date": {"$dateFromString": {"dateString": "$date"}}, "timezone": "+05:30"}}}},
+            {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}},
             {"$group": {"_id": None,
                 "present_days": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$lte": ["$_weekday", 6]}, {"$gte": ["$_weekday", 2]}]}, {"$cond": [{"$ifNull": ["$half_day", False]}, 0.5, 1]}, 0]}},
                 "work_sum": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$ne": [{"$ifNull": ["$work_hours", None]}, None]}]}, "$work_hours", 0]}},
@@ -564,6 +574,7 @@ def department_trend_pipeline(department: str, start: str, end: str):
             {"$project": {"_id": 0, "status": 1, "half_day": 1, "late_minutes": 1}}
         ], "as": "_day_logs"}},
         {"$unwind": {"path": "$_day_logs", "preserveNullAndEmptyArrays": True}},
+        # Each employee/day contributes once to headcount, even with no log.
         {"$group": {"_id": "$_days",
             "headcount": {"$sum": {"$cond": [{"$lte": ["$joined_on", "$_days"]}, 1, 0]}},
             "present_count": {"$sum": {"$cond": [{"$and": [{"$lte": ["$joined_on", "$_days"]}, {"$in": ["$_day_logs.status", list(PRESENT_STATUSES)]}]}, {"$cond": [{"$ifNull": ["$_day_logs.half_day", False]}, 0.5, 1]}, 0]}},
