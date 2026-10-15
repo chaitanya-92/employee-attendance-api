@@ -20,8 +20,12 @@
 - The leaderboard ranks by total late minutes. Equal totals share the same rank; employee code provides a stable display order after ranking.
 - The trend pipeline builds a date series so a day with no attendance rows can still appear in the response.
 
-## Trade-offs and follow-up
+# The five assignment questions
 
-- Indexes target the lookups, uniqueness constraints and sort patterns used by the current endpoints. I'd validate their effectiveness with the explain endpoint on representative data before adding more indexes.
-- For a much larger deployment, I'd consider pre-aggregated daily summaries after measuring the real query workload. I would not add a cache before identifying a measurable bottleneck.
-- Authentication, authorization for regularization, and deployment settings would need to be added before production use.
+1. **Indexes.** I added a unique index on employee codes and a unique `(emp_code, date)` index for attendance, so duplicate employee/day records cannot slip in under concurrent requests. The other indexes support employee/date lookups, date-sorted attendance lists, and department/month filters. I'd check actual execution plans before adding more.
+2. **Two identical punch-ins.** Both requests may reach the insert, but only one can satisfy the unique employee/date index. That request gets 201; MongoDB rejects the other insert and the API returns 409.
+3. **A tie at the leaderboard cutoff.** The pipeline uses the MongoDB competition-rank operator, so equal totals share a rank and the next rank is skipped. Filtering by rank keeps every employee tied at a qualifying rank, then `emp_code` provides stable display order.
+4. **Employees without logs.** The department summary starts from employees hired by month-end and looks up attendance. A missing lookup becomes zero-valued stats, so those employees still count in headcount; people hired later are excluded.
+5. **At 100x the data.** I'd inspect execution stats and the workload first. If analytics become expensive, I'd consider pre-aggregated daily summaries and a measured refresh strategy instead of adding caching without evidence.
+
+Authentication, authorization for regularization, and deployment hardening are outside this assignment's current API surface.
