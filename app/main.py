@@ -298,9 +298,12 @@ class RegularizeIn(BaseModel):
     regularized_by: str = Field(min_length=1, max_length=50)
 
     @model_validator(mode="after")
-    def reject_null_status(self):
+    def validate_optional_fields(self):
         if "status" in self.model_fields_set and self.status is None:
             raise ValueError("status cannot be null")
+        for field in ("punch_in", "punch_out"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null; omit it to leave it unchanged")
         return self
 
     @field_validator("punch_in", "punch_out")
