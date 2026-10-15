@@ -375,14 +375,15 @@ def punch_out(body: PunchOutIn):
         raise HTTPException(404, "employee not found")
     ts = from_epoch_ms(body.punched_at) if body.punched_at is not None else now_utc()
     ts = ts.replace(microsecond=0)
-    # Ignore records already closed when finding the active punch-in. Otherwise,
-    # a second punch-out could pick yesterday's newest completed record and mask
-    # an older open record for an overnight shift.
+    # Select the most recent eligible record first. If it is already closed,
+    # the request is a conflict rather than a chance to modify an older record.
     rec = db.attendance_logs.find_one(
         {"emp_code": body.emp_code, "punch_in": {"$lte": ts},
-         "punch_out": None, "status": {"$in": PRESENT_STATUSES}},
+         "status": {"$in": PRESENT_STATUSES}},
         sort=[("punch_in", DESCENDING)],
     )
+    if rec is not None and rec.get("punch_out") is not None:
+        raise HTTPException(409, "record is already punched out")
     if not rec:
         future = db.attendance_logs.find_one(
             {"emp_code": body.emp_code, "punch_in": {"$gt": ts}, "punch_out": None, "status": {"$in": PRESENT_STATUSES}},
