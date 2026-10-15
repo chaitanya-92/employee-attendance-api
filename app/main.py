@@ -163,7 +163,8 @@ def compute_late_minutes(punch_in: datetime, shift_start: str, shift_end: str = 
 
 def compute_work_hours(punch_in: datetime, punch_out: datetime) -> float:
     seconds = int((punch_out - punch_in).total_seconds())
-    return float((Decimal(seconds) / Decimal(3600)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    hours = (Decimal(seconds) / Decimal(3600)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return float(hours)
 
 
 def compute_overtime(punch_out: datetime, shift_start: str, shift_end: str, date_str: str, punch_in: datetime = None) -> int:
