@@ -562,14 +562,14 @@ def late_leaderboard(month: str = Query(..., pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
 
 def department_trend_pipeline(department: str, start: str, end: str):
     """Build a daily series in MongoDB, including days with no attendance documents."""
-    # The API's dates are calendar dates in IST. Generate date strings from UTC
-    # midnight here because the output labels themselves are date-only values.
+    # Start from the department's employees so joined employees with no log for a
+    # date still contribute to that day's headcount.
     start_dt = datetime.combine(date.fromisoformat(start), time.min, UTC)
     days = (date.fromisoformat(end) - date.fromisoformat(start)).days + 1
     return [
         {"$match": {"department": department}},
         {"$set": {"_days": {"$map": {"input": {"$range": [0, days]}, "as": "offset",
-            "in": {"$dateToString": {"date": {"$dateAdd": {"startDate": start_dt, "unit": "day", "amount": "$$offset"}}, "format": "%Y-%m-%d", "timezone": "UTC"}}}}}},
+            "in": {"$dateToString": {"date": {"$dateAdd": {"startDate": start_dt, "unit": "day", "amount": "$offset"}}, "format": "%Y-%m-%d", "timezone": "UTC"}}}}}},
         {"$unwind": "$_days"},
         {"$lookup": {"from": "attendance_logs", "let": {"code": "$emp_code", "day": "$_days"}, "pipeline": [
             {"$match": {"$expr": {"$and": [{"$eq": ["$emp_code", "$$code"]}, {"$eq": ["$date", "$$day"]}]}}},
