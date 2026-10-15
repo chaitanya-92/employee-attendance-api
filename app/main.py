@@ -395,8 +395,10 @@ def punch_out(body: PunchOutIn):
         raise HTTPException(422, "punch-out must be after punch-in and within 24 hours")
     fields = recalculate(rec["status"], rec["punch_in"], ts, emp, rec["date"])
     updated = db.attendance_logs.find_one_and_update(
-        {"_id": rec["_id"], "punch_out": None}, {"$set": {k: fields[k] for k in ("punch_out", "work_hours", "overtime_minutes", "half_day")}},
-        return_document=ReturnDocument.AFTER)
+        {"_id": rec["_id"], "punch_out": None},
+        {"$set": {k: fields[k] for k in ("punch_out", "work_hours", "overtime_minutes", "half_day")}},
+        return_document=ReturnDocument.AFTER,
+    )
     if updated is None:
         raise HTTPException(409, "record is already punched out")
     return serialize_doc(updated)
