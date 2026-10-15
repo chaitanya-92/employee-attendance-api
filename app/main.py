@@ -37,13 +37,29 @@ ALL_STATUSES = (*PRESENT_STATUSES, "ABSENT", "LEAVE")
 @app.on_event("startup")
 def ensure_indexes():
     db.employees.create_index([("emp_code", ASCENDING)], unique=True, name="uq_employee_code")
-    db.employees.create_index([("department", ASCENDING), ("joined_on", ASCENDING), ("emp_code", ASCENDING)], name="department_joined_code")
+    db.employees.create_index(
+        [("department", ASCENDING), ("joined_on", ASCENDING), ("emp_code", ASCENDING)],
+        name="department_joined_code",
+    )
     db.employees.create_index([("joined_on", ASCENDING)], name="employee_joined_on")
-    db.attendance_logs.create_index([("emp_code", ASCENDING), ("date", ASCENDING)], unique=True, name="uq_attendance_employee_date")
-    db.attendance_logs.create_index([("date", DESCENDING), ("emp_code", ASCENDING)], name="attendance_date_employee")
-    db.attendance_logs.create_index([("emp_code", ASCENDING), ("date", ASCENDING), ("status", ASCENDING)], name="attendance_employee_date_status")
+    db.attendance_logs.create_index(
+        [("emp_code", ASCENDING), ("date", ASCENDING)],
+        unique=True,
+        name="uq_attendance_employee_date",
+    )
+    db.attendance_logs.create_index(
+        [("date", DESCENDING), ("emp_code", ASCENDING)],
+        name="attendance_date_employee",
+    )
+    db.attendance_logs.create_index(
+        [("emp_code", ASCENDING), ("date", ASCENDING), ("status", ASCENDING)],
+        name="attendance_employee_date_status",
+    )
     db.attendance_logs.create_index([("punch_in", DESCENDING)], name="attendance_punch_in")
-    db.attendance_logs.create_index([("date", ASCENDING), ("late_minutes", DESCENDING)], name="attendance_date_late")
+    db.attendance_logs.create_index(
+        [("date", ASCENDING), ("late_minutes", DESCENDING)],
+        name="attendance_date_late",
+    )
 
 
 # --------------------------------------------------------------------------- #
