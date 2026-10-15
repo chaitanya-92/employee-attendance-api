@@ -156,8 +156,9 @@ def compute_late_minutes(punch_in: datetime, shift_start: str, shift_end: str = 
     if punch_in is None:
         return 0
     start, _ = shift_start_for_punch(punch_in, shift_start, shift_end)
-    elapsed = int((punch_in - start.astimezone(UTC)).total_seconds() // 60)
-    return elapsed if punch_in - start.astimezone(UTC) > timedelta(minutes=10) else 0
+    elapsed_seconds = int((punch_in - start.astimezone(UTC)).total_seconds())
+    elapsed_minutes = elapsed_seconds // 60
+    return elapsed_minutes if elapsed_seconds > 10 * 60 else 0
 
 
 def compute_work_hours(punch_in: datetime, punch_out: datetime) -> float:
