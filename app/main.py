@@ -531,7 +531,7 @@ def department_summary_pipeline(month: str, department: Optional[str] = None):
         {"$match": employee_match},
         {"$lookup": {"from": "attendance_logs", "let": {"code": "$emp_code", "joined": "$joined_on"}, "pipeline": [
             {"$match": {"$expr": {"$and": [{"$eq": ["$emp_code", "$$code"]}, {"$gte": ["$date", start]}, {"$lte": ["$date", end]}, {"$gte": ["$date", "$$joined"]}]}}},
-            {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}},
+            {"$set": {"_weekday": {"$dayOfWeek": {"$dateFromString": {"dateString": "$date"}}}}},
             {"$group": {"_id": None,
                 "present_days": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$lte": ["$_weekday", 6]}, {"$gte": ["$_weekday", 2]}]}, {"$cond": [{"$ifNull": ["$half_day", False]}, 0.5, 1]}, 0]}},
                 "work_sum": {"$sum": {"$cond": [{"$and": [{"$in": ["$status", list(PRESENT_STATUSES)]}, {"$ne": [{"$ifNull": ["$work_hours", None]}, None]}]}, "$work_hours", 0]}},
