@@ -18,4 +18,6 @@ jobs:
       - name: Compile application
         run: python -m py_compile app/main.py
       - name: Run unit tests
+        env:
+          PYTHONPATH: .
         run: pytest -q
