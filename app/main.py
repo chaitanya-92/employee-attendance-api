@@ -177,8 +177,9 @@ def compute_overtime(punch_out: datetime, shift_start: str, shift_end: str, date
         sh, sm = map(int, shift_start.split(":"))
         end_day = start_day + timedelta(days=1) if (eh, em) <= (sh, sm) else start_day
         end = datetime.combine(end_day, time(eh, em), IST)
-    minutes = int((punch_out - end.astimezone(UTC)).total_seconds() // 60)
-    return minutes if minutes >= 30 else 0
+    elapsed_seconds = int((punch_out - end.astimezone(UTC)).total_seconds())
+    minutes = elapsed_seconds // 60
+    return minutes if elapsed_seconds >= 30 * 60 else 0
 
 
 def recalculate(status: str, punch_in: Optional[datetime], punch_out: Optional[datetime], employee: dict, day: str) -> dict:
