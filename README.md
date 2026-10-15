@@ -1,27 +1,44 @@
 # Employee Attendance & Analytics API
 
-A FastAPI service for employee attendance, manual regularization with a history trail, and MongoDB-backed attendance analytics.
+FastAPI service for employee attendance records, manual corrections with a history trail, and reporting backed by MongoDB aggregation pipelines.
+
+## Requirements
+
+- Python 3.11+
+- MongoDB 6.0+
+- Git (for the submission workflow)
 
 ## Run locally
-
-Requires Python 3.11+ and MongoDB 6.0+.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+
 export MONGO_URI='mongodb://localhost:27017'
 export MONGO_DB='attendance_db'
-uvicorn app.main:app --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
-`GET /health` checks that MongoDB is reachable. Indexes are created automatically at startup. The API uses epoch milliseconds for instants and the attendance contract's IST calendar conventions for dates and shift times.
+The app creates its indexes on startup. Keep credentials and local configuration out of Git; the defaults above are for local development only.
 
-## Endpoints
+Open `http://127.0.0.1:8000/docs` to try the API. `GET /health` checks that MongoDB can be reached and returns 503 if the database ping fails.
 
-- Employee creation and paginated employee listing
-- Attendance punch-in, punch-out, listing, and manual corrections with an audit trail
-- Employee monthly summaries, department summaries, late leaderboard, and department trend
-- MongoDB execution-plan endpoint for the main analytics/list queries
+## API areas
 
-Analytics are implemented with MongoDB aggregation pipelines. Review the code and test it against MongoDB 6.0+ before relying on it with a production dataset.
+- `POST /employees` and `GET /employees`
+- Attendance punch-in, punch-out, list and regularization endpoints
+- Monthly employee attendance, department summaries, late leaderboard and daily department trend
+- `GET /admin/explain/{endpoint}` for execution-plan information on supported list/analytics queries
+
+The API uses epoch milliseconds for instants and YYYY-MM-DD strings for attendance days. Shift calculations use IST. Analytics run in MongoDB rather than loading the full attendance collection into application memory.
+
+## Seed data
+
+The kit includes sample JSON records and a `sample_seed.py` script. Review the script and the sample records before loading them into a database; do not run a seed script against a database containing data you need to keep.
+
+## Verification
+
+Install the dependencies, start MongoDB, and then exercise the contract in `openapi.yaml` through Swagger UI or your HTTP client. Pay particular attention to duplicate punch-ins, punch-out without an open punch-in, regularization history, and analytics for a month with no records.
+
+This repository should be treated as an assignment implementation, not a production-ready HR system. Authentication/authorization and deployment hardening are outside the current API surface.
