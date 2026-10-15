@@ -405,13 +405,13 @@ def punch_out(body: PunchOutIn):
     return serialize_doc(updated)
 
 
-@app.patch("/attendance/{emp_code}/{day}")
-def regularize_attendance(emp_code: str, day: str, body: RegularizeIn):
-    api_validation_date(day, "date")
+@app.patch("/attendance/{emp_code}/{date}")
+def regularize_attendance(emp_code: str, date: str, body: RegularizeIn):
+    api_validation_date(date, "date")
     emp = db.employees.find_one({"emp_code": emp_code}, {"_id": 0})
     if not emp:
         raise HTTPException(404, "employee not found")
-    current = db.attendance_logs.find_one({"emp_code": emp_code, "date": day})
+    current = db.attendance_logs.find_one({"emp_code": emp_code, "date": date})
     if not current:
         raise HTTPException(404, "attendance record not found")
     desired = body.model_dump(exclude_unset=True)
@@ -424,11 +424,11 @@ def regularize_attendance(emp_code: str, day: str, body: RegularizeIn):
         punch_in = punch_out = None
     elif punch_in is None:
         raise HTTPException(422, "presence status requires punch_in")
-    if punch_in is not None and attendance_date(punch_in, emp) != day:
+    if punch_in is not None and attendance_date(punch_in, emp) != date:
         raise HTTPException(422, "punch_in must belong to the record attendance date")
     if punch_out is not None and (punch_in is None or punch_out <= punch_in or punch_out - punch_in > timedelta(hours=24)):
         raise HTTPException(422, "punch_out must be after punch_in and within 24 hours")
-    values = recalculate(status, punch_in, punch_out, emp, day)
+    values = recalculate(status, punch_in, punch_out, emp, date)
     tracked = ("status", "punch_in", "punch_out", "work_hours", "late_minutes", "overtime_minutes", "half_day")
     changes = {}
     for field in tracked:
