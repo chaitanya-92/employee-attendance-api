@@ -592,7 +592,7 @@ def department_trend_pipeline(department: str, start: str, end: str):
     return [
         {"$match": {"department": department}},
         {"$set": {"_days": {"$map": {"input": {"$range": [0, days]}, "as": "offset",
-            "in": {"$dateToString": {"date": {"$dateAdd": {"startDate": start_dt, "unit": "day", "amount": "$offset"}}, "format": "%Y-%m-%d", "timezone": "UTC"}}}}}},
+            "in": {"$dateToString": {"date": {"$dateAdd": {"startDate": start_dt, "unit": "day", "amount": "$$offset"}}, "format": "%Y-%m-%d", "timezone": "UTC"}}}}}},
         {"$unwind": "$_days"},
         {"$lookup": {"from": "attendance_logs", "let": {"code": "$emp_code", "day": "$_days"}, "pipeline": [
             {"$match": {"$expr": {"$and": [{"$eq": ["$emp_code", "$$code"]}, {"$eq": ["$date", "$$day"]}]}}},
