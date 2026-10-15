@@ -439,6 +439,7 @@ def regularize_attendance(emp_code: str, date: str, body: RegularizeIn):
     if status in ("ABSENT", "LEAVE") and (("punch_in" in desired and desired["punch_in"] is not None) or ("punch_out" in desired and desired["punch_out"] is not None)):
         raise HTTPException(422, "ABSENT and LEAVE cannot include punch times")
     if status in ("ABSENT", "LEAVE"):
+        # A status-only correction to ABSENT/LEAVE clears the old punch times.
         punch_in = punch_out = None
     elif punch_in is None:
         raise HTTPException(422, "presence status requires punch_in")
