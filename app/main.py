@@ -472,6 +472,12 @@ def employee_monthly(emp_code: str, month: str = Query(..., pattern=r"^\d{4}-(0[
     working_days = weekdays_between(max(first, date.fromisoformat(emp["joined_on"])), last)
     result = list(db.attendance_logs.aggregate(employee_monthly_pipeline(emp_code, month)))
     sums = result[0] if result else {"present_days": 0, "leave_days": 0, "late_count": 0, "total_late_minutes": 0, "total_overtime_minutes": 0}
+    # Keep the response shape stable when the aggregation matches no records.
+    sums.setdefault("present_days", 0)
+    sums.setdefault("leave_days", 0)
+    sums.setdefault("late_count", 0)
+    sums.setdefault("total_late_minutes", 0)
+    sums.setdefault("total_overtime_minutes", 0)
     present = float(sums.get("present_days", 0))
     pct = float(Decimal(str(present / working_days * 100)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)) if working_days else None
     return {"emp_code": emp_code, "month": month, "working_days": working_days, **sums, "attendance_pct": pct}
